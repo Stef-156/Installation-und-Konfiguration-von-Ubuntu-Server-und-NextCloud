@@ -87,7 +87,7 @@ In diesem Abschnitt löschen wir Windows und installieren **Ubuntu Server**. Im 
 5. **Configure Proxy & Mirror:** Standardwerte beibehalten (`Enter` drücken).
 6. **Storage Configuration (Festplatte):**
    * Wähle `Use an entire disk`.
-   * **WICHTIG:** Deaktiviere die Option `Set up this disk as an LVM group` (Häkchen entfernen), um das System für Einsteiger einfach zu halten.
+   * **WICHTIG:** Deaktiviere die Option `Set up this disk as an LVM group` (Häkchen entfernen mit leertaste), um das System für Einsteiger einfach zu halten.
    * Wähle die Festplatte aus und bestätige die Warnung, dass alle Daten überschrieben werden (*Continue*).
 7. **Profile Configuration:**
    * **Your name:** Dein Name (z. B. `Max Mustermann`).
