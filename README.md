@@ -58,6 +58,7 @@ In diesem Abschnitt löschen wir Windows und installieren **Ubuntu Server**. Im 
 > ⚠️ **WARNUNG:** Alle auf dem USB-Stick befindlichen Daten werden dabei unwiderruflich gelöscht!
 
 * **Validierung:** Nach Abschluss meldet BalenaEtcher "Flash Complete!". Der USB-Stick ist bereit.
+* Windows-Hinweis: Falls Windows beim Einstecken des geflashten Laufwerks meint, es müsse erst formatiert werden: Keine Sorge, das Zeug ist drauf! (Ignoriere die Formatierungsaufforderung von Windows, das Dateisystem ist für Linux/Raspberry Pi/etc. formatiert und wird von Windows nur nicht erkannt).
 
 ---
 
