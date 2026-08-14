@@ -25,7 +25,7 @@ Wir verwandeln einen ca. 12 Jahre alten Laptop (z. B. Intel Core i3/i5 der 2. od
   * Einen zweiten PC (Windows/Mac/Linux) zum Erstellen des Boot-Sticks.
   * *Empfohlen:* Ein Ethernet-Kabel (LAN) für die Erstinstallation.
 * **Software (auf dem Haupt-PC herunterzuladen):**
-  * [Ubuntu Server 24.04 LTS ISO](https://ubuntu.com/download/server) (*LTS = Long Term Support*: stabil und 5 Jahre mit Updates versorgt).
+  * [Ubuntu Server 26.04 LTS ISO](https://ubuntu.com/download/server) (*LTS = Long Term Support*: stabil und 5 Jahre mit Updates versorgt).
   * [BalenaEtcher](https://etcher.balena.io/) (zum Schreiben der ISO-Datei auf den USB-Stick).
 
 ---
@@ -51,6 +51,7 @@ In diesem Abschnitt löschen wir Windows und installieren **Ubuntu Server**. Im 
 > ⚠️ **WARNUNG:** Alle auf dem USB-Stick befindlichen Daten werden dabei unwiderruflich gelöscht!
 
 * **Validierung:** Nach Abschluss meldet BalenaEtcher "Flash Complete!". Der USB-Stick ist bereit.
+* Hinweis zum USB-Stick: Nach dem Flashen des Ubuntu-Images fordert Windows zum Formatieren auf, da es das Linux-Dateisystem nicht lesen kann. Der Stick ist voll funktionsfähig und nicht beschädigt.
 
 ---
 
