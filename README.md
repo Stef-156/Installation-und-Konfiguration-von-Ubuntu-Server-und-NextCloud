@@ -3,7 +3,7 @@
 - [1. Übersicht \& Voraussetzungen](#1-übersicht--voraussetzungen)
 - [2. Ubuntu Server Installation](#2-ubuntu-server-installation)
 - [3. Hardwarekonfiguration (Laptop-Spezifika)](#3-hardwarekonfiguration-laptop-spezifika)
-- [4. Grundlegende System- \& Sicherheitskonfiguration](#4-grundlegende-system--sicherheitskonfiguration)
+- [4. Grundlegende System- & Sicherheitskonfiguration](#4-grundlegende-system---sicherheitskonfiguration)
 - [5. Nextcloud Installation \& Datenbank-Setup](#5-nextcloud-installation--datenbank-setup)
 - [6. Fernzugriff \& Verschlüsselung (TLS/SSL)](#6-fernzugriff--verschlüsselung-tlsssl)
 - [7. Wartung \& Troubleshooting](#7-wartung--troubleshooting)
