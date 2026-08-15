@@ -175,51 +175,106 @@ sudo systemctl restart systemd-logind
 
 ### Schritt 3.2: WLAN-Verbindung einrichten (Netplan)
 
-> 💡 **Erklärung:** Ubuntu nutzt das Werkzeug Netplan zur Netzwerksteuerung. Die Konfiguration erfolgt über Textdateien im YAML-Format.
+# Ubuntu Server: WLAN über Netplan einrichten (Schritt-für-Schritt)
 
-> ⚠️ **WICHTIG bei YAML:** Rücke Text niemals mit der Tabulatortaste ein, sondern nutze ausschließlich Leerzeichen! YAML reagiert extrem empfindlich auf falsche Einrückungen.
+Diese Anleitung zeigt Schritt für Schritt, wie man bei einer frischen Installation von **Ubuntu Server** das WLAN über **Netplan** einrichtet – komplett ohne grafische Oberfläche und garantiert ohne Frust mit den Abständen.
 
-1. Ermittle den Namen deiner WLAN-Schnittstelle:
+---
+
+## 🛠️ Schritt 1: Namen der WLAN-Karte herausfinden
+
+Bevor wir konfigurieren, müssen wir wissen, wie Ubuntu deine WLAN-Hardware nennt. 
+
+Gib folgenden Befehl in das Terminal ein:
+```bash
+ls /sys/class/net
+```
+Du siehst eine kurze Liste. Suche nach dem Namen, der mit **`wl`** beginnt (z. B. `wlp2s0`, `wlp3s0` oder `wlo1`). 
+* *Schreibe dir diesen Namen exakt auf!*
+
+---
+
+## 📄 Schritt 2: Die Konfigurationsdatei leeren
+
+Netplan reagiert extrem empfindlich auf unsichtbare Formatierungsfehler oder alte Einträge. Um Tippfehler und falsche Abstände zu vermeiden, machen wir die Datei zuerst komplett leer:
 
 ```bash
-ip link
-
+sudo truncate -s 0 /etc/netplan/*.yaml
 ```
+*(Falls nach deinem Passwort gefragt wird, tippe es blind ein und drücke Enter).*
 
-Suche nach einem Eintrag, der mit `w` beginnt, z. B. `wlan0` oder `wlp2s0`.
+---
 
-2. Bearbeite die Netplan-Datei:
+## 📝 Schritt 3: Die Datei im Editor öffnen
+
+Öffne die leere Netzwerkerweiterung mit dem Texteditor `nano`:
 
 ```bash
-sudo nano /etc/netplan/50-cloud-init.yaml
-
+sudo nano /etc/netplan/01-netcfg.yaml
 ```
 
-3. Passe den Inhalt wie folgt an (ersetze `wlp2s0`, `Dein-WLAN-Name` und `Dein-WLAN-Passwort`):
+---
+
+## 📐 Schritt 4: Die Vorlage exakt abtippen
+
+Kopiere oder tippe den folgenden Block in die Datei. 
+
+⚠️ **ACHTUNG (SEHR WICHTIG):** 
+* Benutze **NIEMALS die Tabulator-Taste (Tab)** für die Abstände!
+* Nutze **NUR normale Leerzeichen** (Leertaste). Die Einrückungen müssen mathematisch perfekt sein.
+
+In den Klammern steht, wie oft du am Zeilenanfang die Leertaste drücken musst:
 
 ```yaml
-network:
-  version: 2
-  renderer: networkd
-  wifis:
-    wlp2s0:
-      optional: true
-      access-points:
-        "Dein-WLAN-Name":
-          password: "Dein-WLAN-Passwort"
-      dhcp4: true
-
+network:                                      (0 Leerzeichen)
+  version: 2                                  (2 Leerzeichen)
+  renderer: networkd                          (2 Leerzeichen)
+  wifis:                                      (2 Leerzeichen)
+    wlp3s0:                                   (4 Leerzeichen) <-- Hier deinen Kartennamen aus Schritt 1 eintragen
+      optional: true                          (6 Leerzeichen)
+      access-points:                          (6 Leerzeichen)
+        "DEIN_WLAN_NAME":                     (8 Leerzeichen) <-- Die "" stehen lassen!
+          password: "DEIN_WLAN_PASSWORT"      (10 Leerzeichen) <-- Die "" stehen lassen!
+      dhcp4: true                             (6 Leerzeichen)
 ```
 
-4. Speichere die Datei (`Strg` + `O` -> `Enter` -> `Strg` + `X`).
-5. Überprüfe die Datei auf Syntaxfehler und wende sie an:
+### So speicherst und schließt du den Editor:
+1. Drücke **`Strg` + `O`** (Buchstabe O für Open/Ausschreiben).
+2. Drücke **`Enter`**, um den Dateinamen zu bestätigen.
+3. Drücke **`Strg` + `X`**, um den Editor zu schließen.
+
+---
+
+## 🚀 Schritt 5: WLAN aktivieren & testen
+
+Jetzt aktivieren wir die neue Netzwerkkonfiguration:
 
 ```bash
 sudo netplan apply
-
 ```
+*Wenn der Bildschirm danach einfach ruhig bleibt und eine leere Zeile anzeigt, war die Konfiguration fehlerfrei!*
 
-> 🚨 **Warnsignale:** Erhältst du beim Ausführen von `netplan apply` die Fehlermeldung `line X column Y: mapping values are not allowed here`, hast du Tabulatoren oder falsche Leerzeichen verwendet.
+### Der finale Internet-Test:
+```bash
+ping -c 3 google.com
+```
+Wenn auf dem Bildschirm erfolgreiche Zeilen wie `64 bytes from...` erscheinen, steht deine Funkverbindung und dein Ubuntu Server ist online!
+
+---
+
+## 🔍 Fehlerbehebung (Troubleshooting)
+
+### 1. Fehler: "inconsistent indentation"
+Du hast aus Versehen die Tab-Taste benutzt oder dich bei den Leerzeichen vertan. Öffne die Datei erneut mit `sudo nano` und zähle die Leerzeichen am Zeilenanfang noch einmal genau nach.
+
+### 2. Fehler: "Network is unreachable" beim Ping
+Die Datei ist korrekt, aber die Verbindung zum Router schlägt fehl. 
+* Überprüfe, ob du deinen WLAN-Namen (SSID) oder dein Passwort in den Anführungszeichen `" "` falsch geschrieben hast (Groß-/Kleinschreibung beachten!).
+* Manchmal schläft die WLAN-Karte noch. Wecke sie mit diesem Befehl auf:
+  ```bash
+  sudo rfkill unblock wifi
+  ```
+
 
 ---
 
