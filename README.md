@@ -430,11 +430,11 @@ To                         Action      From
 
 ---
 
-## 5. Nextcloud Installation & Datenbank-Setup
+## 5. Docker Installation & Nextcloud
 
 *⏱️ Geschätzte Dauer: 45–60 Minuten*
 
-Wir installieren nun den sogenannten **LEMP-Stack**:
+Aus Zeitgründen installieren und nutzen wir Docker statt dem sogenannten **LEMP-Stack**:
 
 * **L**inux (Betriebssystem)
 * **E**ngine-X / Nginx (Webserver)
@@ -443,217 +443,90 @@ Wir installieren nun den sogenannten **LEMP-Stack**:
 
 ---
 
-### Schritt 5.1: Software-Abhängigkeiten installieren
+Hier sind noch einmal alle Schritte für deine Docker-Installation auf dem Ubuntu-Server kompakt und übersichtlich zusammengefasst, damit du sie direkt nacheinander abarbeiten kannst:
+## Schritt 1: IP-Adresse deines Ubuntu-Servers ermitteln
+
+   1. Gib im Terminal deines Ubuntu-Servers diesen Befehl ein:
+   
+   ip a
+   
+   2. Suche nach deiner IP-Adresse (z. B. 192.168.178.50) und schreibe sie dir auf.
+   3. Tipp: Stelle in deinem Router (z. B. Fritz!Box) ein, dass der Ubuntu-Server immer die gleiche IP-Adresse behält.
+
+## Schritt 2: Docker auf Ubuntu installieren
+Kopiere diesen gesamten Block und füge ihn in dein Terminal ein, um die offizielle, stabile Version von Docker zu installieren:
+
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y ca-certificates curl gnupg
+
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://docker.com | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://docker.com \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+## Schritt 3: Speicherordner erstellen & Nextcloud AIO starten
+
+   1. Erstelle einen Ordner in deinem Home-Verzeichnis, in dem später alle Daten deines Gastes und von dir landen:
+   
+   mkdir -p ~/nextcloud_daten
+   
+   2. Starte den Nextcloud AIO-Mastercontainer mit diesem Befehl:
+   
+   sudo docker run \
+     --init \
+     --sig-proxy=false \
+     --name nextcloud-aio-mastercontainer \
+     --restart always \
+     --publish 80:80 \
+     --publish 8080:8080 \
+     --publish 8443:8443 \
+     --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
+     --volume /var/run/docker.sock:/var/run/docker.sock:ro \
+     -e NEXTCLOUD_DATADIR="/home/$USER/nextcloud_daten" \
+     -e AIO_DISABLE_REVERSE_PROXY_GUARD=true \
+     -d nextcloud/all-in-one:latest
+   
+   [1] 
+
+## Schritt 4: Einrichtung im Webbrowser (Admin)
+
+   1. Gehe an einen PC/Laptop im selben WLAN und öffne den Browser.
+   2. Rufe die IP deines Servers mit dem Port 8080 über HTTPS auf:
+   Beispiel: https://192.168.178.50:8080
+   3. Klicke die Sicherheitswarnung des Browsers weg ("Erweitert" -> "Risiko akzeptieren und weiter").
+   4. Kopiere das angezeigte AIO-Passwort und logge dich damit ein.
+   5. Gib bei der Domain-Abfrage einfach die IP-Adresse deines Servers ein.
+   6. Scrolle nach unten und klicke auf "Containers starten" (Download and start containers). Warte 3–5 Minuten, bis alle Punkte grün leuchten.
+   7. Kopiere dir die ganz oben angezeigten Admin-Zugangsdaten (Benutzername: admin + Passwort). [2] 
+
+## Schritt 5: Account für deinen Gast anlegen
+
+   1. Klicke auf den Button "Öffne deine Nextcloud" und logge dich mit den Admin-Daten aus Schritt 4 ein.
+   2. Klicke oben rechts auf dein Profilbild -> Benutzer.
+   3. Klicke oben links auf + Neuer Benutzer.
+   4. Gib den Benutzernamen (z. B. gast) und ein Passwort ein.
+   5. Wähle bei Kontingent ein Limit (z. B. 20 GB) und speichere mit dem blauen Haken.
+
+## Schritt 6: Handy deines Gastes verbinden
+
+   1. Dein Gast verbindet sich mit deinem WLAN und lädt die kostenlose Nextcloud App herunter.
+   2. Er tippt auf Anmelden.
+   3. Als Server-Adresse gibt er eure lokale IP mit http:// ein:
+   Beispiel: http://192.168.178.50
+   4. Er loggt sich mit seinem Benutzernamen (gast) und dem von dir vergebenen Passwort ein.
+
+Gib mir einfach Bescheid, bei welchem Schritt du gerade bist oder falls bei der Eingabe eines Befehls im Terminal eine Frage auftaucht!
+
+[1] [https://www.linux-community.de](https://www.linux-community.de/ausgaben/linuxuser/2024/08/immich-dank-selbst-hosting-unliebsame-verbindungen-zu-google-und-co-kappen/)
+[2] [https://goneuland.de](https://goneuland.de/part-db-mit-docker-compose-installieren/)
 
-> 💡 **Erklärung:** Nextcloud benötigt den Nginx-Webserver, die MariaDB-Datenbank sowie verschiedene PHP-Module zur Verarbeitung von Bildern, Dateien und Verschlüsselungen.
-
-Führe diesen zusammengefassten Befehl aus:
-
-```bash
-sudo apt install -y nginx mariadb-server php-fpm php-mysql php-curl php-gd php-json php-common php-xml php-mbstring php-gmp php-bcmath php-imagick php-xmlrpc php-zip php-intl php-cli php-tokyocabinet php-redis redis-server unzip
-
-```
-
----
-
-### Schritt 5.2: MariaDB-Datenbank einrichten
-
-> 💡 **Erklärung:** Nextcloud speichert Benutzerdaten, Pfade, Passwörter und Einstellungen in einer Datenbank.
-
-1. Sichere die Grundinstallation von MariaDB ab:
-
-```bash
-sudo mysql_secure_installation
-
-```
-
-Beantworte die Fragen im Dialog wie folgt:
-
-* **Enter current password for root:** `Enter` drücken (keins gesetzt).
-* **Switch to unix_socket authentication:** `n`
-* **Change the root password?:** `y` -> Vergib ein starkes Root-Passwort für die Datenbank!
-* **Remove anonymous users?:** `y`
-* **Disallow root login remotely?:** `y`
-* **Remove test database and access to it?:** `y`
-* **Reload privilege tables now?:** `y`
-
-2. Erstelle die Nextcloud-Datenbank:
-
-Öffne die Datenbank-Konsole:
-
-```bash
-sudo mysql -u root -p
-
-```
-
-*(Gib dein eben vergebenes Datenbank-Root-Passwort ein).*
-
-Führe nun folgende Befehle exakt aus. Ersetze `SicheresPasswort123!` durch dein eigenes sicheres Passwort!
-
-```sql
-CREATE DATABASE nextcloud CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-CREATE USER 'nextclouduser'@'localhost' IDENTIFIED BY 'SicheresPasswort123!';
-GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextclouduser'@'localhost';
-FLUSH PRIVILEGES;
-EXIT;
-
-```
-
----
-
-### Schritt 5.3: Nextcloud herunterladen & entpacken
-
-> 💡 **Erklärung:** Wir laden das offizielle Nextcloud-Paket herunter, entpacken es und verschieben es in das Standardverzeichnis des Webservers.
-
-1. Wechsle in den temporären Ordner und lade das Paket herunter:
-
-```bash
-cd /tmp
-wget [https://download.nextcloud.com/server/releases/latest.zip](https://download.nextcloud.com/server/releases/latest.zip)
-
-```
-
-2. Entpacke die Archiv-Datei:
-
-```bash
-unzip latest.zip
-
-```
-
-3. Verschiebe den entpackten Ordner in das Web-Verzeichnis:
-
-```bash
-sudo mv nextcloud /var/www/
-
-```
-
-4. Übergib die Berechtigungen an den Webserver-Benutzer `www-data`:
-
-```bash
-sudo chown -R www-data:www-data /var/www/nextcloud
-
-```
-
----
-
-### Schritt 5.4: Nginx-Webserver konfigurieren
-
-> 💡 **Erklärung:** Nginx muss wissen, unter welcher Adresse und mit welchen PHP-Einstellungen Nextcloud ausgeliefert werden soll.
-
-1. Erstelle eine Konfigurationsdatei für Nextcloud:
-
-```bash
-sudo nano /etc/nginx/sites-available/nextcloud
-
-```
-
-2. Füge folgenden Inhalt ein. Passe die Zeile `server_name` an die IP-Adresse deines Laptops an!
-
-```nginx
-server {
-    listen 80;
-    server_name 192.168.178.45; # <--- DEINE LAPTOP IP EINTRAGEN
-
-    root /var/www/nextcloud;
-    index index.php index.html;
-
-    client_max_body_size 512M; # Maximale Dateiupload-Größe
-    fastcgi_buffers 64 4K;
-
-    add_header X-Content-Type-Options nosniff;
-    add_header X-XSS-Protection "1; mode=block";
-    add_header X-Robots-Tag none;
-    add_header X-Download-Options noopen;
-    add_header X-Frame-Options "SAMEORIGIN";
-
-    location / {
-        rewrite ^ /index.php;
-    }
-
-    location ~ ^/(?:build|tests|config|lib|3rdparty|templates|data)/ {
-        deny all;
-    }
-
-    location ~ ^/(?:\.|autotest|occ|issue|credencials|suitemeta) {
-        deny all;
-    }
-
-    location ~ \.php(?:$|/) {
-        rewrite ^/(?!index|remote|public|cron|core/ajax/update|status|ocs/v[12]|updater/.+|oc[ms]-provider/.+).+$ /index.php$request_uri;
-
-        fastcgi_split_path_info ^(.+\.php)(/.*)$;
-        set $path_info$fastcgi_path_info;
-        try_files $fastcgi_script_name =404;
-
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param PATH_INFO $path_info;
-        fastcgi_param HTTPS off;
-
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
-        fastcgi_intercept_errors on;
-        fastcgi_request_buffering off;
-    }
-
-    location ~ \.(?:css|js|woff2?|svg|gif|map)$ {
-        try_files $uri /index.php$request_uri;
-        add_header Cache-Control "public, max-age=15778463";
-    }
-
-    location ~ \.(?:png|html|ttl|ico)$ {
-        try_files $uri /index.php$request_uri;
-    }
-}
-
-```
-
-3. Aktiviere die neue Konfiguration und deaktiviere die Standard-Beispielseite:
-
-```bash
-sudo ln -s /etc/nginx/sites-available/nextcloud /etc/nginx/sites-enabled/
-sudo rm /etc/nginx/sites-enabled/default
-
-```
-
-4. Prüfe die Datei auf Syntaxfehler:
-
-```bash
-sudo nginx -t
-
-```
-
-5. Wenn `syntax is ok` erscheint, starte den Webserver neu:
-
-```bash
-sudo systemctl restart nginx
-
-```
-
-> 🚨 **Warnsignale:** Meldet `nginx -t` einen Fehler bezüglich `php8.3-fpm.sock`, prüfe mit `ls /run/php/`, welche PHP-Version auf deinem Server installiert wurde und passe die Pfad-Zeile in der Nginx-Datei entsprechend an.
-
----
-
-### Schritt 5.5: Web-Installation im Browser abschließen
-
-1. Öffne den Browser auf deinem Haupt-PC und gib die IP des Laptops ein: `http://192.168.178.45`.
-2. Fülle die Eingabefelder im Installationsmenü aus:
-* **Administrator-Konto erstellen:** Erstelle hier deinen Wunschnamen und ein Passwort für das Nextcloud-Admin-Konto.
-* **Speicher & Datenbank:** Klicke auf **MySQL/MariaDB**.
-* **Datenbank-Benutzer:** `nextclouduser`
-* **Datenbank-Passwort:** Das in Schritt 5.2 gewählte Passwort (`SicheresPasswort123!`).
-* **Datenbank-Name:** `nextcloud`
-* **Host:** `localhost`
-
-
-3. Klicke auf **Einrichtung abschließen**.
-
-> 💡 **Hinweis:** Der Erstinstallationprozess kann auf 12 Jahre alter Hardware bis zu 3 Minuten dauern. Bitte das Browser-Fenster nicht schließen oder aktualisieren!
-
----
-
-### 🔍 Validierung von Abschnitt 5
-
-Nach Abschluss wirst du automatisch zum Dashboard deiner neuen Nextcloud weitergeleitet. Das System läuft lokal!
 
 ---
 
