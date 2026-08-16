@@ -371,6 +371,9 @@ ssh cloudadmin@192.168.178.45
 
 4. Bestätige die erste Verbindung mit der Eingabe von `yes` und gib dein SSH-Passwort ein.
 
+5. Bei der ersten SSH-Verbindung mit einem neuen Gerät zeigt Git/SSH diese Sicherheitsmeldung an, da der Schlüssel des Zielservers noch unbekannt ist.
+   Nach der Überprüfung der IP-Adresse im eigenen Netzwerk kann die Meldung sicher durch die Eingabe von yes bestätigt werden.
+
 > 💡 Ab jetzt kannst du die Befehle bequem von deinem Haupt-PC kopieren und ins Terminal einfügen!
 
 ---
