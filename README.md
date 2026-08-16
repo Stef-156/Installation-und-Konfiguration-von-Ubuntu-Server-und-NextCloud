@@ -439,45 +439,68 @@ Das System ist sofort einsatzbereit, läuft überall identisch und hält das Hos
 
 ---
 
-Hier sind noch einmal alle Schritte für deine Docker-Installation auf dem Ubuntu-Server kompakt und übersichtlich zusammengefasst, damit du sie direkt nacheinander abarbeiten kannst:
-## Schritt 1: IP-Adresse deines Ubuntu-Servers ermitteln
+# Lokale Nextcloud-Infrastruktur mit Docker auf Ubuntu Server
 
-   1. Gib im Terminal deines Ubuntu-Servers diesen Befehl ein:
-   
-  ```bash
-ip a
+Diese Anleitung beschreibt die Schritt-für-Schritt-Installation von **Nextcloud AIO (All-in-One)** über Docker auf einem lokalen Ubuntu Server. Das Setup ist für den Betrieb im heimischen WLAN optimiert und ermöglicht es, private Speicherbereiche für Gäste/Freunde einzurichten.
 
-  ```
-   
-   2. Suche nach deiner IP-Adresse (z. B. 192.168.178.50) und schreibe sie dir auf.
-   3. Tipp: Stelle in deinem Router (z. B. Fritz!Box) ein, dass der Ubuntu-Server immer die gleiche IP-Adresse behält.
+---
 
-## Schritt 2: Docker auf Ubuntu installieren
-Kopiere diesen gesamten Block und füge ihn in dein Terminal ein, um die offizielle, stabile Version von Docker zu installieren:
+## 📋 Voraussetzungen
+* Ein installierter **Ubuntu Server** im lokalen Netzwerk.
+* Ein PC/Laptop im selben WLAN für die Einrichtung über den Webbrowser.
+* Sudo-Rechte auf dem Ubuntu Server.
 
+---
+
+## 🛠️ Schritt 1: IP-Adresse des Ubuntu-Servers ermitteln
+
+Bevor die Installation startet, muss die lokale Netzwerkadresse des Servers ermittelt werden.
+
+1. Gib im Terminal des Ubuntu-Servers folgenden Befehl ein:
+   ```bash
+   ip a
+   ```
+2. Suche nach der primären Netzwerkschnittstelle (z. B. `eth0` oder `enp3s0`). Notiere die IPv4-Adresse (z. B. `192.168.178.50`).
+3. **Empfehlung:** Stelle im Router (z. B. Fritz!Box) ein, dass der Ubuntu-Server über DHCP *immer* die gleiche IP-Adresse zugewiesen bekommt.
+
+---
+
+## 🐳 Schritt 2: Docker auf Ubuntu installieren
+
+Dieser Block aktualisiert das System und installiert die offizielle, stabile Version der Docker-Engine direkt aus dem Docker-Repository.
+
+```bash
+# System aktualisieren
 sudo apt update && sudo apt upgrade -y
 sudo apt install -y ca-certificates curl gnupg
 
+# Docker GPG-Schlüssel hinzufügen
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://docker.com | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
+# Repository zu den Apt-Quellen hinzufügen
 echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://docker.com \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://docker.com \
+  \((. /etc/os-release && echo "\)VERSION_CODENAME") stable" | \
   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
+# Docker Pakete installieren
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
 
-## Schritt 3: Speicherordner erstellen & Nextcloud AIO starten
+---
 
-   1. Erstelle einen Ordner in deinem Home-Verzeichnis, in dem später alle Daten deines Gastes und von dir landen:
-   
+## 🚀 Schritt 3: Speicherordner erstellen & Nextcloud AIO starten
+
+1. Erstelle im Home-Verzeichnis einen permanenten Ordner, in dem die Daten der Cloud-Nutzer gespeichert werden:
+   ```bash
    mkdir -p ~/nextcloud_daten
-   
-   2. Starte den Nextcloud AIO-Mastercontainer mit diesem Befehl:
-   
+   ```
+
+2. Starte den offiziellen Nextcloud AIO-Mastercontainer. Die Umgebungsvariable `AIO_DISABLE_REVERSE_PROXY_GUARD=true` erlaubt die spätere Initialisierung über die lokale IP-Adresse ohne öffentliche Domain:
+   ```bash
    sudo docker run \
      --init \
      --sig-proxy=false \
@@ -488,43 +511,50 @@ sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin d
      --publish 8443:8443 \
      --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
      --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-     -e NEXTCLOUD_DATADIR="/home/$USER/nextcloud_daten" \
+     -e NEXTCLOUD_DATADIR="/home/\$USER/nextcloud_daten" \
      -e AIO_DISABLE_REVERSE_PROXY_GUARD=true \
      -d nextcloud/all-in-one:latest
-   
-   [1] 
+   ```
 
-## Schritt 4: Einrichtung im Webbrowser (Admin)
+---
 
-   1. Gehe an einen PC/Laptop im selben WLAN und öffne den Browser.
-   2. Rufe die IP deines Servers mit dem Port 8080 über HTTPS auf:
-   Beispiel: https://192.168.178.50:8080
-   3. Klicke die Sicherheitswarnung des Browsers weg ("Erweitert" -> "Risiko akzeptieren und weiter").
-   4. Kopiere das angezeigte AIO-Passwort und logge dich damit ein.
-   5. Gib bei der Domain-Abfrage einfach die IP-Adresse deines Servers ein.
-   6. Scrolle nach unten und klicke auf "Containers starten" (Download and start containers). Warte 3–5 Minuten, bis alle Punkte grün leuchten.
-   7. Kopiere dir die ganz oben angezeigten Admin-Zugangsdaten (Benutzername: admin + Passwort). [2] 
+## 🌐 Schritt 4: Einrichtung im Webbrowser (Admin-Setup)
 
-## Schritt 5: Account für deinen Gast anlegen
+1. Öffne den Browser auf einem PC/Laptop im selben Netzwerk.
+2. Rufe das AIO-Dashboard über die Server-IP auf Port **8080** via **HTTPS** auf:
+   *Beispiel:* `https://192.168.178.50:8080`
+3. Ignoriere die Sicherheitswarnung des Browsers (auf *Erweitert* -> *Risiko akzeptieren und weiter* klicken), da im lokalen Netz standardmäßig kein SSL-Zertifikat vorliegt.
+4. **Kopiere das angezeigte AIO-Passwort** und melde dich an.
+5. Gib bei der Domain-Abfrage die lokale **IP-Adresse des Servers** ein.
+6. Scrolle nach unten und klicke auf **"Containers starten"** (Download and start containers). Docker lädt nun Nextcloud, PostgreSQL, Redis und Apache im Hintergrund. Dieser Vorgang dauert ca. 3–5 Minuten.
+7. Sobald alle Statusanzeigen grün leuchten, kopiere die generierten **Admin-Zugangsdaten** (Benutzername: `admin` + Passwort).
 
-   1. Klicke auf den Button "Öffne deine Nextcloud" und logge dich mit den Admin-Daten aus Schritt 4 ein.
-   2. Klicke oben rechts auf dein Profilbild -> Benutzer.
-   3. Klicke oben links auf + Neuer Benutzer.
-   4. Gib den Benutzernamen (z. B. gast) und ein Passwort ein.
-   5. Wähle bei Kontingent ein Limit (z. B. 20 GB) und speichere mit dem blauen Haken.
+---
 
-## Schritt 6: Handy deines Gastes verbinden
+## 👥 Schritt 5: Account für Gäste / Freunde anlegen
 
-   1. Dein Gast verbindet sich mit deinem WLAN und lädt die kostenlose Nextcloud App herunter.
-   2. Er tippt auf Anmelden.
-   3. Als Server-Adresse gibt er eure lokale IP mit http:// ein:
-   Beispiel: http://192.168.178.50
-   4. Er loggt sich mit seinem Benutzernamen (gast) und dem von dir vergebenen Passwort ein.
+1. Klicke im Dashboard auf **"Öffne deine Nextcloud"** (Open your Nextcloud) und logge dich mit den Admin-Daten aus Schritt 4 ein.
+2. Klicke oben rechts auf das Admin-Profilbild und wähle den Menüpunkt **Benutzer**.
+3. Klicke oben links auf **+ Neuer Benutzer**.
+4. Definiere die Zugangsdaten für den Gast:
+   * **Benutzername:** z. B. `gast`
+   * **Passwort:** Ein sicheres Kennwort eintragen.
+   * **Kontingent:** Setze ein Speicherlimit (z. B. `20 GB`), um ein unkontrolliertes Vollaufen der Server-Festplatte zu verhindern.
+5. Bestätige die Erstellung mit dem blauen Haken am Ende der Zeile.
 
-Gib mir einfach Bescheid, bei welchem Schritt du gerade bist oder falls bei der Eingabe eines Befehls im Terminal eine Frage auftaucht!
+---
 
-[1] [https://www.linux-community.de](https://www.linux-community.de/ausgaben/linuxuser/2024/08/immich-dank-selbst-hosting-unliebsame-verbindungen-zu-google-und-co-kappen/)
-[2] [https://goneuland.de](https://goneuland.de/part-db-mit-docker-compose-installieren/)
+## 📱 Schritt 6: Smartphone des Gastes verbinden
+
+Sobald der Gast im lokalen WLAN angemeldet ist, kann er sein Gerät wie folgt koppeln:
+
+1. Installiere die offizielle und kostenlose **Nextcloud App** aus dem Google Play Store oder Apple App Store.
+2. Öffne die App und tippe auf **Anmelden**.
+3. Gib als Server-Adresse die IP-Adresse des Ubuntu-Servers mit `http://` ein (die Nutzung von unverschlüsseltem HTTP vereinfacht die lokale Verbindung in der App ohne eigene Zertifikatskette):
+   *Beispiel:* `http://192.168.178.50`
+4. Melde dich mit dem in Schritt 5 erstellten Benutzernamen (`gast`) und dem dazugehörigen Passwort an.
+5. Die App ist nun einsatzbereit. Der automatische Foto-Upload kann optional in den App-Einstellungen aktiviert werden.
+
 
 
 ---
