@@ -445,6 +445,7 @@ Hier sind noch einmal alle Schritte für deine Docker-Installation auf dem Ubunt
    1. Gib im Terminal deines Ubuntu-Servers diesen Befehl ein:
    
   ```bash ip a
+
   ```
    
    2. Suche nach deiner IP-Adresse (z. B. 192.168.178.50) und schreibe sie dir auf.
