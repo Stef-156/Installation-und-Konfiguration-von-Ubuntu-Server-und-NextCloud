@@ -434,7 +434,8 @@ To                         Action      From
 
 *⏱️ Geschätzte Dauer: 45–60 Minuten*
 
-Aus Zeitgründen setzen wir statt eines klassischen LEMP-Stacks (Linux, Nginx, MariaDB und PHP für Nextcloud) auf Docker
+Aus Zeitgründen setzen wir statt eines klassischen LEMP-Stacks (Linux, Nginx, MariaDB und PHP für Nextcloud) auf Docker, durch dessen Einsatz die aufwendige manuelle Konfiguration entfällt. 
+Das System ist sofort einsatzbereit, läuft überall identisch und hält das Host-Betriebssystem dauerhaft sauber.
 
 ---
 
