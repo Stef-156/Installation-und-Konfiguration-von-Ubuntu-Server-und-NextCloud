@@ -549,8 +549,44 @@ sudo docker run hello-world
 7. Sobald alle Statusanzeigen grün leuchten, kopiere die generierten **Admin-Zugangsdaten** (Benutzername: `admin` + Passwort).
 
 ---
+## 🚀 Schritt 5: Nextcloud über Docker starten
 
-## 👥 Schritt 5: Account für Gäste / Freunde anlegen
+Dieses Dokument beschreibt, wie Nextcloud als isolierter Container im Hintergrund gestartet wird, auch wenn die Software zuvor nicht auf dem lokalen System vorhanden war.
+
+---
+
+## 💻 Startbefehl für das Terminal
+
+Kopiere den folgenden Befehl, füge ihn in dein Terminal ein und bestätige mit `Enter`:
+
+```bash
+sudo docker run -d -p 8080:80 --name meine-cloud nextcloud
+```
+
+---
+
+### 📑 Technische Erklärung: Was passiert im Hintergrund?
+
+Sobald dieser Befehl ausgeführt wird, arbeitet Docker eine automatisierte Kette von Schritten ab:
+
+1. **Lokaler Abgleich:** Docker prüft, ob das Software-Abbild (`Image`) von Nextcloud bereits lokal auf der Festplatte existiert. 
+2. **Automatischer Download (Pull):** Da das Image lokal nicht gefunden wird, verbindet sich Docker mit der offiziellen Registrierung (**Docker Hub**), lädt alle benötigten Datenpakete von Nextcloud herunter und entpackt sie.
+3. **Isolierter Start (`-d` / detached):** Der Parameter `-d` sorgt dafür, dass der Container unsichtbar im Hintergrund läuft. Das Terminal wird nach dem Start sofort wieder für andere Befehle freigegeben.
+4. **Port-Weiterleitung (`-p 8080:80`):** Nextcloud arbeitet innerhalb des Containers auf dem Standard-Webport `80`. Docker schlägt eine Brücke und leitet diesen Port an den Port `8080` deines echten Computers weiter.
+5. **Namensvergabe (`--name meine-cloud`):** Der Container erhält den festen Namen `meine-cloud`. Dadurch lässt er sich später über einfache Befehle steuern (z. B. `sudo docker stop meine-cloud`).
+
+---
+
+### 🔗 Zugriff auf die Cloud
+
+1. Warte nach dem Ausführen des Befehls **ca. 1 Minute**, bis Nextcloud die interne Datenbank im Hintergrund initialisiert hat.
+2. Öffne einen Internetbrowser und rufe die folgende Adresse auf:
+   
+   👉 **`http://"IPADRESSEVOMSERVER:8080`**
+
+3. Auf der angezeigten blauen Nextcloud-Oberfläche kannst du nun deinen ersten **Administrator-Benutzer** und ein sicheres **Passwort** festlegen, um die Cloud fertig einzurichten.
+
+## 👥 Schritt 6: Account für Gäste / Freunde anlegen
 
 1. Klicke im Dashboard auf **"Öffne deine Nextcloud"** (Open your Nextcloud) und logge dich mit den Admin-Daten aus Schritt 4 ein.
 2. Klicke oben rechts auf das Admin-Profilbild und wähle den Menüpunkt **Benutzer**.
@@ -563,7 +599,7 @@ sudo docker run hello-world
 
 ---
 
-## 📱 Schritt 6: Smartphone des Gastes verbinden
+## 📱 Schritt 7: Smartphone des Gastes verbinden
 
 Sobald der Gast im lokalen WLAN angemeldet ist, kann er sein Gerät wie folgt koppeln:
 
