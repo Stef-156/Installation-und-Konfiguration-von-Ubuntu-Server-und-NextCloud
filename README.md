@@ -444,86 +444,96 @@ To                         Action      From
 *⏱️ Geschätzte Dauer: 45–60 Minuten*
 
 Aus Zeitgründen setzen wir statt eines klassischen LEMP-Stacks (Linux, Nginx, MariaDB und PHP für Nextcloud) auf Docker, durch dessen Einsatz die aufwendige manuelle Konfiguration entfällt. 
-Das System ist sofort einsatzbereit, läuft überall identisch und hält das Host-Betriebssystem dauerhaft sauber.
+Das System ist sofort einsatzbereit, läuft überall identisch und hält das Host-Betriebssystem dauerhaft sauber. 
 
 ---
 
-# Lokale Nextcloud-Infrastruktur mit Docker auf Ubuntu Server
+# 🐳 Docker Installation auf Ubuntu (Offizieller Weg)
 
-Diese Anleitung beschreibt die Schritt-für-Schritt-Installation von **Nextcloud AIO (All-in-One)** über Docker auf einem lokalen Ubuntu Server. Das Setup ist für den Betrieb im heimischen WLAN optimiert und ermöglicht es, private Speicherbereiche für Gäste/Freunde einzurichten.
+Diese Dokumentation beschreibt Schritt für Schritt die offizielle und sichere Installation der Docker Engine unter Ubuntu unter Verwendung des modernen DEB822-Repository-Formats.
 
----
-
-## 📋 Voraussetzungen
-* Ein installierter **Ubuntu Server** im lokalen Netzwerk.
-* Ein PC/Laptop im selben WLAN für die Einrichtung über den Webbrowser.
-* Sudo-Rechte auf dem Ubuntu Server.
+[Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
 
 ---
 
-## 🛠️ Schritt 1: IP-Adresse des Ubuntu-Servers ermitteln
+## 🛠️ Schritt 1: Docker-Repository einrichten
 
-Bevor die Installation startet, muss die lokale Netzwerkadresse des Servers ermittelt werden.
+Bevor Docker installiert werden kann, müssen die offiziellen Sicherheitszertifikate (GPG-Schlüssel) und die Paketquelle hinzugefügt werden.
 
-1. Gib im Terminal des Ubuntu-Servers folgenden Befehl ein:
-   ```bash
-   ip a
-   ```
-2. Suche nach der primären Netzwerkschnittstelle (z. B. `eth0` oder `enp3s0`). Notiere die IPv4-Adresse (z. B. `192.168.178.50`).
-3. **Empfehlung:** Stelle im Router (z. B. Fritz!Box) ein, dass der Ubuntu-Server über DHCP *immer* die gleiche IP-Adresse zugewiesen bekommt.
+### 1. System aktualisieren & Werkzeuge installieren
+```bash
+sudo apt update
+sudo apt install ca-certificates curl
+```
+* **Was passiert hier?** Aktualisiert die lokalen Paketlisten des Systems und installiert `curl` (zum Herunterladen von Dateien) sowie `ca-certificates` (für sichere, verschlüsselte HTTPS-Verbindungen).
+
+### 2. Schlüsselverzeichnis erstellen
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+```
+* **Was passiert hier?** Erstellt einen geschützten Systemordner (`/etc/apt/keyrings`) für digitale Sicherheitsschlüssel. Die Rechte `0755` sorgen dafür, dass nur Administratoren darin schreiben, aber alle Benutzer lesen dürfen.
+
+### 3. Offiziellen GPG-Schlüssel herunterladen
+```bash
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+```
+* **Was passiert hier?** Lädt das offizielle, digitale Echtheitszertifikat direkt von den Docker-Servern herunter und speichert es als `docker.asc`. Der `chmod`-Befehl gibt dem System Leserechte, damit der Paketmanager die Echtheit der Docker-Pakete mathematisch überprüfen kann.
+
+### 4. Docker-Paketquelle (Repository) hinzufügen
+```bash
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: \$(. /etc/os-release && echo "\({UBUNTU_CODENAME:-\)VERSION_CODENAME}")
+Components: stable
+Architectures: \$(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+```
+* **Was passiert hier?** Schreibt die offizielle Download-Adresse in eine neue Konfigurationsdatei (`docker.sources`). Das Skript ermittelt dabei über Variablen im Hintergrund vollautomatisch deine exakte Ubuntu-Version (z. B. `noble` oder `jammy`) sowie deine Prozessor-Architektur (`amd64`/`arm64`), um Fehler zu vermeiden.
+
+### 5. Paketlisten aktualisieren
+```bash
+sudo apt update
+```
+* **Was passiert hier?** Das System liest alle Softwarequellen neu ein. Da die Docker-Quelle nun registriert ist, kennt Ubuntu ab jetzt alle verfügbaren Docker-Pakete im Internet.
 
 ---
 
-## 🐳 Schritt 2: Docker auf Ubuntu installieren
+## 📥 Schritt 2: Docker-Pakete installieren
 
-Dieser Block aktualisiert das System und installiert die offizielle, stabile Version der Docker-Engine direkt aus dem Docker-Repository.
+Nachdem das System vorbereitet ist, wird die eigentliche Software installiert.
 
 ```bash
-# System aktualisieren
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y ca-certificates curl gnupg
-
-# Docker GPG-Schlüssel hinzufügen
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://docker.com | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
-# Repository zu den Apt-Quellen hinzufügen
-echo \
-  "deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://docker.com \
-  \((. /etc/os-release && echo "\)VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# Docker Pakete installieren
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
+* **Was passiert hier?** Installiert das gesamte Docker-Ökosystem:
+  * `docker-ce`: Die eigentliche Docker-Engine (Kernprogramm im Hintergrund).
+  * `docker-ce-cli`: Die Befehlszeilen-Schnittstelle, um Docker-Befehle ins Terminal einzugeben.
+  * `containerd.io`: Die Laufzeitumgebung, die Container sicher vom restlichen System isoliert.
+  * `docker-buildx-plugin` & `docker-compose-plugin`: Erweiterte Werkzeuge zum effizienten Bauen von Images und zum Starten von Multi-Container-Umgebungen über YAML-Dateien.
 
 ---
 
-## 🚀 Schritt 3: Speicherordner erstellen & Nextcloud AIO starten
+## 🚀 Schritt 3: Dienst starten & Überprüfen
 
-1. Erstelle im Home-Verzeichnis einen permanenten Ordner, in dem die Daten der Cloud-Nutzer gespeichert werden:
-   ```bash
-   mkdir -p ~/nextcloud_daten
-   ```
+### 1. Docker-Dienst aktivieren
+```bash
+sudo systemctl status docker
+# Falls nicht aktiv:
+sudo systemctl start docker
+```
+* **Was passiert hier?** Überprüft, ob der Docker-Hintergrunddienst läuft. Falls nicht, wird er mit `start` manuell angeworfen.
 
-2. Starte den offiziellen Nextcloud AIO-Mastercontainer. Die Umgebungsvariable `AIO_DISABLE_REVERSE_PROXY_GUARD=true` erlaubt die spätere Initialisierung über die lokale IP-Adresse ohne öffentliche Domain:
-   ```bash
-   sudo docker run \
-     --init \
-     --sig-proxy=false \
-     --name nextcloud-aio-mastercontainer \
-     --restart always \
-     --publish 80:80 \
-     --publish 8080:8080 \
-     --publish 8443:8443 \
-     --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
-     --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-     -e NEXTCLOUD_DATADIR="/home/\$USER/nextcloud_daten" \
-     -e AIO_DISABLE_REVERSE_PROXY_GUARD=true \
-     -d nextcloud/all-in-one:latest
-   ```
+### 2. Offiziellen Funktionstest ausführen
+```bash
+sudo docker run hello-world
+```
+* **Was passiert hier?** Docker sucht lokal nach dem Test-Image `hello-world`. Da es neu installiert ist, lädt Docker das Image automatisch aus dem Internet (Docker Hub) herunter, startet es in einem isolierten Container und gibt eine Erfolgsmeldung aus. 
+
+**Ergebnis bei Erfolg:** Das Terminal gibt den Text `Hello from Docker!` aus.
+
 
 ---
 
