@@ -403,7 +403,7 @@ sudo ufw allow 443/tcp
 sudo ufw enable
 
 ```
-(4.) Beim "Aussperren:
+(4.) Beim "Aussperren":
 
 ```bash
 sudo ufw allow ssh
